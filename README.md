@@ -1,2 +1,2 @@
-# Credit_Card_MicroService
+# Credit Card MicroService
 CS361 - Credit Card Microservice
