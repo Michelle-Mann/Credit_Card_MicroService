@@ -1,8 +1,8 @@
 # Credit Card MicroService
 ---
-CS361 - Credit Card Microservice
-Written by: Michelle Mann 
-CS361, Winter 2025
+CS361 - Credit Card Microservice  
+Written by: Michelle Mann  
+CS361, Winter 2025  
 
 ## Starting the Server
 ---
