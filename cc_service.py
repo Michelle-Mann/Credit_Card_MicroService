@@ -108,8 +108,12 @@ def validate_expiration(exp_date: str):
     current_month = today.month
     current_year = today.year
 
-    # Modern CCs are not issued with expiry dates before 2000-2049
-    exp_year += 2000
+    # Determine century
+    cutoff_year = current_year % 100 + 20       # a little in the future
+    if exp_year < cutoff_year:
+        exp_year += 2000
+    else:
+        exp_year += 1900
 
     return (exp_year > current_year) or \
         (exp_year == current_year and exp_month >= current_month)
@@ -120,34 +124,52 @@ def validate_expiration(exp_date: str):
 def validate_card(card_number, exp_date):
     """Returns message responses cc_validation rules"""
 
-    # Attempts to format card, responds if error.
+    results = {"valid": True}  # Start with a positive assumption
+
+    # Attempts to format card, adds error if failed.
     formatted_cc = format_cc(card_number)
     if formatted_cc == -1:
-        return {"valid": False, "error": "Invalid card format"}
+        results["valid"] = False
+        results["error"] = "Invalid card format"
+        return results
 
-    # Attempts to determine card type, responds if error.
+    # Attempts to determine card type, adds error if failed.
     card_type = validate_card_type(formatted_cc)
     if card_type == -1:
-        return {"valid": False, "error": "Unknown card type"}
+        results["valid"] = False
+        results["error"] = "Unknown card header"
+        return results
+    else:
+        results["card_type"] = card_type
 
-    # Attemptes to validate card length based on card type, responds if error.
+    # Attemptes to validate card length based on card type, adds error if
+    # failed.
     if not valid_card_length(formatted_cc, card_type):
-        return {"valid": False, "error": "Invalid card length"}
+        results["valid"] = False
+        results["error"] = "Incorrect length"
+        return results
 
-    # Attempts to validate checksum value, responds if error.
+    # Attempts to validate checksum value, adds error if failed.
     if not validate_luhn(formatted_cc):
-        return {"valid": False, "error": "Failed Luhn's check"}
+        results["valid"] = False
+        results["error"] = "Invalid checksum"
+        return results
 
-    # Attempts to validate expiration date, responds if error.
+    # Attempts to validate expiration date, adds error if failed.
     valid_date = validate_expiration(exp_date)
     if valid_date == -1:
-        return {"valid": False, "error": "Invalid format"}
+        results["valid"] = False
+        results["error"] = "Invalid date format"
+        return results
 
     if not valid_date:
-        return {"valid": False, "error": "Card Expired"}
+        results["valid"] = False
+        results["error"] = "Card Expired"
+        return results
 
     # Returns valid card message.
-    return {"valid": True, "card_type": card_type, "valid_exp": "Valid"}
+    results["valid_exp"] = "Valid"
+    return results
 
 
 # ------------ All related to Sending / Receiving message ----------- #
@@ -191,9 +213,18 @@ def start_server():
 
                 print(f"Processed request: {message_dict}")
 
+                # Handles bad header calls.
+                try:
+                    card_number = message_dict["cc_number"]
+                    exp_date = message_dict["exp_date"]
+                except KeyError:
+                    socket.send_json({"valid": False,
+                                      "error": "Incorrect message headers \
+                                           for service"})
+                    continue
                 card_number = message_dict.get("cc_number", "")
                 exp_date = message_dict.get("exp_date", "")
-                print(card_number, exp_date)
+
                 result = validate_card(card_number, exp_date)
 
                 # Append results to message_dict
