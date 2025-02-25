@@ -62,5 +62,3 @@ for i in range(len(cc_nums)):
     json_message = json.dumps(credit_card_data)
     send_reqest_test(json_message)
     time.sleep(1)
-
-
