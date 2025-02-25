@@ -34,9 +34,6 @@ def send_reqest_test(request_data):
 
     return json.loads(message)
 
-    # Step #8: Ends server
-    socket.send_string("Q")     # (Q)uit will ask server to stop.
-
 
 # Creation of our credit card data.
 cc_nums = ["4111111111111111", "5500000000000004", "5199111111111113",
@@ -62,3 +59,13 @@ for i in range(len(cc_nums)):
     json_message = json.dumps(credit_card_data)
     send_reqest_test(json_message)
     time.sleep(1)
+
+# Send quit signal after all tests are done
+context = zmq.Context()
+socket = context.socket(zmq.REQ)
+socket.connect("tcp://localhost:5557")
+socket.send_string("Q")
+socket.close()
+context.term()
+
+print("All tests completed. Quit signal sent.")
