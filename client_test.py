@@ -34,6 +34,9 @@ def send_reqest_test(request_data):
 
     return json.loads(message)
 
+    # Step #8: Ends server
+    socket.send_string("Q")     # (Q)uit will ask server to stop.
+
 
 # Creation of our credit card data.
 cc_nums = ["4111111111111111", "5500000000000004", "5199111111111113",
@@ -60,5 +63,4 @@ for i in range(len(cc_nums)):
     send_reqest_test(json_message)
     time.sleep(1)
 
-# Step #8: Ends server
-socket.send_string("Q")     # (Q)uit will ask server to stop.
+
